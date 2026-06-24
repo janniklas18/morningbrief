@@ -6,6 +6,7 @@ Kategorien:
   - "Märkte"              Börsen, Indizes, Rohstoffe, Anleihen
   - "Makro & Wirtschaft"  Konjunktur, Notenbanken, Politik
   - "Unternehmen & Tech"  Einzelwerte, Tech, Earnings
+  - "Venture Capital"     VC-Deals, Finanzierungsrunden, Startups (Fokus DE/EU)
 
 Hinweis: M&A-/Deal-Meldungen werden NICHT über eine eigene Quelle bezogen,
 sondern automatisch per Stichwort über ALLE Feeds erkannt und in einer eigenen
@@ -21,8 +22,8 @@ FEEDS = [
     {"name": "Investing.com", "url": "https://www.investing.com/rss/news.rss",                            "category": "Märkte",             "lang": "en"},
     {"name": "finanzen.net",  "url": "https://www.finanzen.net/rss/news",                                 "category": "Märkte",             "lang": "de"},
     {"name": "CNBC Markets",  "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258", "category": "Märkte", "lang": "en"},
-    # Einzelwert-Feed: Ocugen (OCGN)
-    {"name": "Yahoo – OCGN",  "url": "https://finance.yahoo.com/rss/headline?s=OCGN",                     "category": "Märkte",             "lang": "en"},
+    # Einzelwert-Feed: Ocugen (OCGN) – skip_ma verhindert Filterung durch M&A-Erkennung
+    {"name": "Yahoo – OCGN",  "url": "https://finance.yahoo.com/rss/headline?s=OCGN",                     "category": "Märkte",             "lang": "en", "skip_ma": True},
 
     # --- Makro & Wirtschaft -------------------------------------------------
     {"name": "tagesschau",    "url": "https://www.tagesschau.de/wirtschaft/index~rss2.xml",               "category": "Makro & Wirtschaft", "lang": "de"},
@@ -38,7 +39,7 @@ FEEDS = [
 
     # --- Venture Capital (Fokus DE/EU, ggf. relevante US-News) --------------
     {"name": "Gründerszene",  "url": "https://www.gruenderszene.de/feed",                                 "category": "Venture Capital",    "lang": "de"},
-    {"name": "t3n",           "url": "https://t3n.de/rss.xml",                                            "category": "Venture Capital",    "lang": "de"},
+    {"name": "deutsche-startups", "url": "https://www.deutsche-startups.de/feed/",                          "category": "Venture Capital",    "lang": "de"},
     {"name": "EU-Startups",   "url": "https://www.eu-startups.com/feed/",                                 "category": "Venture Capital",    "lang": "en"},
     {"name": "Sifted",        "url": "https://sifted.eu/feed",                                            "category": "Venture Capital",    "lang": "en"},
     {"name": "TechCrunch VC", "url": "https://techcrunch.com/category/venture/feed/",                     "category": "Venture Capital",    "lang": "en"},

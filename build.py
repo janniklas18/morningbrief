@@ -72,6 +72,7 @@ class Article:
     category: str
     lang: str
     published: datetime | None  # tz-aware (UTC) oder None
+    skip_ma: bool = False
 
     @property
     def sort_key(self) -> datetime:
@@ -121,6 +122,7 @@ def fetch_feed(feed: dict) -> tuple[list[Article], str | None]:
                 category=feed["category"],
                 lang=feed["lang"],
                 published=_parse_time(entry),
+                skip_ma=feed.get("skip_ma", False),
             )
         )
     return articles, None
@@ -166,6 +168,8 @@ def dedupe(articles: list[Article]) -> list[Article]:
 
 
 def is_ma(article: Article) -> bool:
+    if article.skip_ma:
+        return False
     return bool(MA_PATTERN.search(article.title))
 
 
