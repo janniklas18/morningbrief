@@ -39,7 +39,7 @@ OUTPUT_FILE = OUTPUT_DIR / "index.html"
 
 HTTP_TIMEOUT = 12          # Sekunden pro Feed
 USER_AGENT = "Mozilla/5.0 (Morgenbrief RSS Reader; +https://github.com/)"
-MAX_PER_SECTION = 14       # Schlagzeilen pro Sektion
+MAX_PER_SECTION = 10       # Schlagzeilen pro Sektion
 MAX_PER_SOURCE = 4         # max. Schlagzeilen einer Quelle je Sektion (Vielfalt)
 MAX_MA = 10                # Schlagzeilen in der M&A-Sektion
 
