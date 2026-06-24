@@ -39,7 +39,7 @@ OUTPUT_FILE = OUTPUT_DIR / "index.html"
 
 HTTP_TIMEOUT = 12          # Sekunden pro Feed
 USER_AGENT = "Mozilla/5.0 (Morgenbrief RSS Reader; +https://github.com/)"
-MAX_PER_SECTION = 14       # Schlagzeilen pro Sektion
+MAX_PER_SECTION = 10       # Schlagzeilen pro Sektion
 MAX_PER_SOURCE = 4         # max. Schlagzeilen einer Quelle je Sektion (Vielfalt)
 MAX_MA = 10                # Schlagzeilen in der M&A-Sektion
 
@@ -72,6 +72,7 @@ class Article:
     category: str
     lang: str
     published: datetime | None  # tz-aware (UTC) oder None
+    skip_ma: bool = False
 
     @property
     def sort_key(self) -> datetime:
@@ -121,6 +122,7 @@ def fetch_feed(feed: dict) -> tuple[list[Article], str | None]:
                 category=feed["category"],
                 lang=feed["lang"],
                 published=_parse_time(entry),
+                skip_ma=feed.get("skip_ma", False),
             )
         )
     return articles, None
@@ -166,6 +168,8 @@ def dedupe(articles: list[Article]) -> list[Article]:
 
 
 def is_ma(article: Article) -> bool:
+    if article.skip_ma:
+        return False
     return bool(MA_PATTERN.search(article.title))
 
 
