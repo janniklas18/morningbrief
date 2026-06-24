@@ -1,0 +1,11 @@
+# Generierte Seite (wird vom Workflow gebaut, nicht eingecheckt)
+dist/
+
+# Vorschau-Screenshots
+preview_*.png
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
