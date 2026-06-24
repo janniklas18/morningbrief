@@ -39,7 +39,7 @@ OUTPUT_FILE = OUTPUT_DIR / "index.html"
 
 HTTP_TIMEOUT = 12          # Sekunden pro Feed
 USER_AGENT = "Mozilla/5.0 (Morgenbrief RSS Reader; +https://github.com/)"
-MAX_PER_SECTION = 10       # Schlagzeilen pro Sektion
+MAX_PER_SECTION = 14       # Schlagzeilen pro Sektion
 MAX_PER_SOURCE = 4         # max. Schlagzeilen einer Quelle je Sektion (Vielfalt)
 MAX_MA = 10                # Schlagzeilen in der M&A-Sektion
 
@@ -72,7 +72,6 @@ class Article:
     category: str
     lang: str
     published: datetime | None  # tz-aware (UTC) oder None
-    skip_ma: bool = False
 
     @property
     def sort_key(self) -> datetime:
@@ -122,7 +121,6 @@ def fetch_feed(feed: dict) -> tuple[list[Article], str | None]:
                 category=feed["category"],
                 lang=feed["lang"],
                 published=_parse_time(entry),
-                skip_ma=feed.get("skip_ma", False),
             )
         )
     return articles, None
@@ -168,8 +166,6 @@ def dedupe(articles: list[Article]) -> list[Article]:
 
 
 def is_ma(article: Article) -> bool:
-    if article.skip_ma:
-        return False
     return bool(MA_PATTERN.search(article.title))
 
 
@@ -286,12 +282,13 @@ def render_article(art: Article, now: datetime) -> str:
 def render_section(name: str, items: list[Article], now: datetime, index: int) -> str:
     is_ma_section = name == MA_SECTION
     section_class = "section ma" if is_ma_section else "section"
+    data_cat = _esc(name)
     if items:
         body = "\n".join(render_article(a, now) for a in items)
         body = f'      <ul class="items">\n{body}\n      </ul>'
     else:
         body = '      <p class="empty">Heute keine Meldungen.</p>'
-    return f"""    <section class="{section_class}">
+    return f"""    <section class="{section_class}" data-cat="{data_cat}">
       <h2 class="section-title"><span class="num">{index:02d}</span>{_esc(name)}</h2>
 {body}
     </section>"""
@@ -343,6 +340,12 @@ def render_html(sections: dict[str, list[Article]], briefing: str | None,
         </ul>
       </details>"""
 
+    nav_items = [MA_SECTION] + CATEGORY_ORDER
+    nav_html = "\n".join(
+        f'      <button class="nav-btn" data-target="{_esc(name)}">{_esc(name)}</button>'
+        for name in nav_items
+    )
+
     return f"""<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -359,8 +362,8 @@ def render_html(sections: dict[str, list[Article]], briefing: str | None,
     --ink:      #18181B;
     --muted:    #6B6B71;
     --hairline: #E1E0D8;
-    --accent:   #0F6E66;   /* Petrol – Links/Marke */
-    --flag:     #B26A00;   /* Amber – M&A-Akzent   */
+    --accent:   #0F6E66;
+    --flag:     #B26A00;
     --surface:  #FBFAF6;
   }}
   @media (prefers-color-scheme: dark) {{
@@ -408,6 +411,32 @@ def render_html(sections: dict[str, list[Article]], briefing: str | None,
   }}
   .stamp .date {{ color: var(--ink); }}
 
+  /* Kategorie-Navigation */
+  .cat-nav {{
+    display: flex; flex-wrap: wrap; gap: 0.5rem;
+    margin-top: 1.4rem; padding-bottom: 1.2rem;
+    border-bottom: 1px solid var(--hairline);
+  }}
+  .nav-btn {{
+    font-family: "JetBrains Mono", monospace; font-size: 0.74rem;
+    font-weight: 500; letter-spacing: 0.04em;
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    background: transparent; color: var(--muted);
+    cursor: pointer; transition: all 0.12s ease;
+    white-space: nowrap;
+  }}
+  .nav-btn:hover {{ border-color: var(--accent); color: var(--accent); }}
+  .nav-btn.active {{
+    background: var(--ink); border-color: var(--ink);
+    color: var(--paper);
+  }}
+  .nav-btn[data-target="M&amp;A &amp; Deals"].active {{
+    background: var(--flag); border-color: var(--flag);
+    color: var(--paper);
+  }}
+
   /* Briefing */
   .briefing {{
     margin: 1.5rem 0 0; padding: 1rem 1.1rem;
@@ -422,6 +451,7 @@ def render_html(sections: dict[str, list[Article]], briefing: str | None,
 
   /* Sektionen */
   .section {{ margin-top: 2.4rem; }}
+  .section.hidden {{ display: none; }}
   .section.ma {{
     border-left: 3px solid var(--flag);
     padding-left: 1.1rem; margin-left: -1.1rem;
@@ -481,6 +511,10 @@ def render_html(sections: dict[str, list[Article]], briefing: str | None,
       </div>
     </header>
 
+    <nav class="cat-nav" aria-label="Kategorien">
+{nav_html}
+    </nav>
+
 {briefing_html}
 
 {sections_html}
@@ -489,6 +523,35 @@ def render_html(sections: dict[str, list[Article]], briefing: str | None,
       {ok_n} von {total} Feeds geladen · erzeugt {now.strftime('%d.%m.%Y %H:%M')} (Europe/Berlin){failed_html}
     </footer>
   </div>
+<script>
+  (function () {{
+    var btns = document.querySelectorAll('.nav-btn');
+    var sections = document.querySelectorAll('.section[data-cat]');
+
+    function show(target) {{
+      sections.forEach(function (s) {{
+        s.classList.toggle('hidden', target !== null && s.dataset.cat !== target);
+      }});
+      btns.forEach(function (b) {{
+        b.classList.toggle('active', b.dataset.target === target);
+      }});
+      try {{ sessionStorage.setItem('morgenbrief-cat', target || ''); }} catch(e) {{}}
+    }}
+
+    btns.forEach(function (btn) {{
+      btn.addEventListener('click', function () {{
+        var t = btn.dataset.target;
+        show(btn.classList.contains('active') ? null : t);
+      }});
+    }});
+
+    // Letzte Auswahl wiederherstellen
+    try {{
+      var saved = sessionStorage.getItem('morgenbrief-cat');
+      if (saved) show(saved);
+    }} catch(e) {{}}
+  }})();
+</script>
 </body>
 </html>"""
 
