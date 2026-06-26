@@ -2,9 +2,11 @@ name: Morgenbrief bauen & veröffentlichen
 
 on:
   schedule:
-    # 04:00 UTC ≈ 06:00 Berlin (Sommer) / 05:00 Berlin (Winter).
-    # GitHub-Cron läuft IMMER in UTC – bei Bedarf hier anpassen.
-    - cron: "0 4 * * *"
+    # GitHub-Cron läuft IMMER in UTC und ist "best effort": Läufe zur vollen
+    # Stunde werden oft verzögert oder übersprungen. Deshalb eine krumme Minute
+    # plus einen zweiten Versuch ~1 Std. später als Sicherheitsnetz.
+    - cron: "17 4 * * *"    # ~06:17 Berlin (Sommer) / 05:17 (Winter)
+    - cron: "17 5 * * *"    # Fallback, falls der erste Lauf übersprungen wird
   workflow_dispatch:        # erlaubt manuelles Auslösen über den Actions-Tab
   push:
     branches: [main]        # baut auch bei jedem Push (z. B. nach Feed-Änderung)
